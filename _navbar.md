@@ -8,8 +8,9 @@
   - [🏄‍♀️ TypeScript](README?id=TypeScript)
   - [🏊‍♀️ 小程序](README?id=miniProgram)
   - [🎯 LeetCode](README?id=LeetCode)
-  - [🎹 生活](README?id=Life)
-  - [🔨 工具](README?id=Tool)
+  - [🎹 Life](README?id=Life)
+  - [🔨 Tool](README?id=Tool)
+  - [💫 Book](README?id=Book)
   
 - [<span class="iconfont icon-lianjie"></span> 友链](about/Friends.md)
 - [<span class="iconfont icon-rili"></span> 日历](about/Calendar.md)
