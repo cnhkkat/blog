@@ -4,6 +4,8 @@
 - [手写reapeat](JavaScript/handwritten/repeat.md)
 - [数组字符串全排列](JavaScript/handwritten/permute.md)
 
+## TypeScript
+- [TypeScript定义](TypeScript/definition.md)
 ## LeetCode
 - [二分查找](LeetCode/binary-search.md)
 ## Tool
