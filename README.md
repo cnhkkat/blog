@@ -8,9 +8,10 @@
 - [cookie](JavaScript/browser/cookie.md)
 - [cors](JavaScript/browser/cors.md)
 
-## TypeScript
+## TypeScript ✨
 - [TypeScript认识](TypeScript/definition.md)
 - [vscode 插件](TypeScript/dev-env.md)
+- [类型](TypeScript/type.md)
 
 ## LeetCode
 - [二分查找](LeetCode/binary-search.md)
