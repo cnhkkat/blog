@@ -240,3 +240,67 @@ function Comment(props) {
 - 使用 JSX 语法时需要传入一个函数作为事件处理函数 `onClick={activateLasers}`
 - 不能通过`return false` 的方式**阻止默认行为**。你必须显式的使用 `e.preventDefault()`。`e` 是一个合成事件。
 - 不需要使用 `addEventListener` 为已创建的 DOM 元素添加监听器。只需要在该元素初始渲染的时候添加监听器即可。将事件处理函数声明为 class 中的**方法**。
+- 在 JavaScript 中，**class 的方法默认不会绑定 this**。如果你忘记绑定 this.handleClick 并把它传入了 onClick，当你调用这个函数的时候 `this` 的值为 `undefined`
+- 如果你没有在方法后面添加`()`，例如 `onClick={this.handleClick}`，你应该为这个方法绑定 `this`
+  - 绑定this的方法一：在 `constructor` 里 `this.handleClick = this.handleClick.bind(this)`;
+  - Create React App 默认启用 class fields 语法: `handleClick = () => {console.log('this is:', this)}`
+  - 或者使用箭头函数：`onClick={() => this.handleClick()}`
+    - 此语法问题在于每次渲染 LoggingButton 时都会创建不同的回调函数。在大多数情况下，这没什么问题，但如果该回调函数作为 prop 传入子组件时，这些组件可能会进行额外的重新渲染。我们通常建议在构造器中绑定或使用 class fields 语法来避免这类性能问题
+  - 传参
+    - `onClick={(e) => this.deleteRow(id, e)}`, React 的事件对象 e 作为第二个参数
+    - `onClick={this.deleteRow.bind(this, id)}`
+
+# 条件渲染
+在 React 中，你可以创建不同的组件来封装各种你需要的行为。然后，依据应用的不同状态，你可以只渲染对应状态下的部分内容
+
+## &&
+
+true && expression 总是返回 expression
+false && expression 总是返回 false
+
+## 三目运算符
+condition ? true : false
+
+## 阻止组件渲染
+在组件内通过 if 判断是否 `return null`，可以阻止组件渲染。在组件的 render 方法中返回 null 不会影响组件的生命周期。componentDidUpdate 依然会被调用。
+
+# 列表 & key
+
+使用 map 遍历 numbers 数组，将数组的每个元素变成 `<li>` 标签,最后将得到的数组赋值给 listItems。然后把整个 listItems 插入到 `<ul>` 元素中，然后渲染进 DOM 。最后页面上显示一个 1 到 5 的项目符号列表。
+
+**在一个组件中渲染列表**
+```jsx
+function ListItem(props) {
+  return <li>{props.value}</li>;
+}
+function NumberList(props) {
+  const numbers = props.numbers;
+  return (
+    <ul>
+      {numbers.map((number) =>
+        <ListItem key={number.toString()} value={number}>
+      )}
+    </ul>
+  );
+}
+
+const numbers = [1, 2, 3, 4, 5];
+ReactDOM.render(
+  <NumberList numbers={numbers} />,
+  document.getElementById('root')
+);
+```
+📢 运行这段代码，将会看到一个警告 a key should be provided for list items。也就是说当创建一个元素时，必须有一个 `key` 属性。
+
+- key 帮助 React **识别哪些元素改变**了，比如被添加或删除。
+- 一个元素的 key 最好是这个元素在列表中拥有的一个**独一无二的字符串**。通常，使用数据中的 `id` 来作为元素的 key。
+- 如果列表项目的顺序可能会变化，不建议使用 index 来用作 key 值，因为这样做会导致性能变差，还可能引起组件状态的问题。
+- 如果你选择不指定显式的 key 值，那么 React 将**默认使用 index** 用作为列表项目的 key 值。
+- 当我们生成两个不同的数组时，我们可以使用相同的 key 值。数组元素中使用的 key 在**其兄弟节点**之间应该是独一无二的
+- 组件传 key ，`<Post key={post.id} />`
+
+✨ tips:
+- 在 map() 方法中的元素需要设置 key 属性
+- 元素的 key 只有放在就近的数组上下文中才有意义
+
+# 表单
