@@ -30,7 +30,7 @@ ReactDOM.render(element, document.getElementById('root'));
 ## React 只更新它需要更新的部分
 
 # 组件
-> 组件，它接受任意的入参（即 “props”），并返回用于描述页面展示内容的 React 元素
+> 组件，它**接受任意的入参**（即 “props”），并返回用于**描述页面展示内容的 React 元素**
 
 ## 函数组件
 ```js
@@ -304,3 +304,304 @@ ReactDOM.render(
 - 元素的 key 只有放在就近的数组上下文中才有意义
 
 # 表单
+表单元素通常会保持一些内部的 state。
+
+> 在 HTML 中，表单元素（如<`input>、 <textarea> 和 <select>`）之类的表单元素通常自己维护 state，并根据用户输入进行更新。而在 React 中，可变状态（mutable state）通常保存在组件的 state 属性中，并且只能通过使用 setState()来更新。
+
+我们可以把两者结合起来，使 React 的 state 成为“**唯一数据源**”。
+
+## 受控组件
+React控制表单输入元素
+
+```js
+  handleChange(event) {
+    this.setState({value: event.target.value});
+  }
+
+  handleSubmit(event) {
+    alert('提交的名字: ' + this.state.value);
+    event.preventDefault();
+  }
+
+  render() {
+    return (
+      <form onSubmit={this.handleSubmit}>
+        <label>
+          名字:
+          <input type="text" value={this.state.value} onChange={this.handleChange} />
+        </label>
+        <input type="submit" value="提交" />
+      </form>
+    );
+  }
+```
+由于在表单元素上设置了 value 属性，因此显示的值将始终为 this.state.value，这使得 React 的 state 成为唯一数据源。由于 handlechange 在每次按键时都会执行并更新 React 的 state，因此显示的值将随着用户输入而更新。
+对于受控组件来说，输入的值始终由 React 的 state 驱动。
+
+> `<input type="text">`, `<textarea>` 和 `<select>` 之类的标签都非常相似,它们都接受一个 value 属性，你可以使用它来实现受控组件
+
+### select
+将数组传递到 value 属性中，以支持在 select 标签中选择多个选项`<select multiple={true} value={['B', 'C']}>`
+
+### input
+<input type="file"> 允许用户从存储设备中选择一个或多个文件，将其上传到服务器，或通过使用 JavaScript 的 File API 进行控制。因为它的 value 只读，所以它是 React 中的一个非受控组件。
+
+### 使用name处理多个input  
+当需要处理多个 input 元素时，我们可以给每个元素添加 name 属性，并让处理函数根据 event.target.name 的值选择要执行的操作
+
+```js
+this.setState({
+  [name]: value
+});
+// ES6 计算属性名称的语法更新给定输入名称对应的 state 值
+```
+由于 setState() 自动将部分 state 合并到当前 state, 只需调用它 更改部分 state 
+
+# 状态提升
+> 多个组件需要反映相同的变化数据，这时我们建议将共享状态**提升到最近的共同父组件**中去
+
+通常，state 首先添加到需要渲染数据的组件中，如果其他组件也需要这个state，就把state提升到最近的父组件中。
+
+TemperatureInput组件，temperature = this.state.temperature;
+```js
+const scaleNames = {
+  c: 'Celsius',
+  f: 'Fahrenheit'
+};
+handleChange(e) {
+    this.setState({temperature: e.target.value});
+}
+
+render() {
+    const temperature = this.state.temperature;
+    const scale = this.props.scale;
+    return (
+      <fieldset>
+        <legend>Enter temperature in {scaleNames[scale]}:</legend>
+        <input value={temperature}
+               onChange={this.handleChange} />
+      </fieldset>
+    );
+  }
+```
+两个 TemperatureInput 组件均在各自内部的 state 中相互独立地保存着各自的数据
+```js
+// Calculator
+render() {
+    return (
+      <div>
+        <TemperatureInput scale="c" />
+        <TemperatureInput scale="f" />
+      </div>
+    );
+  }
+```
+我们希望两个输入框内的数值彼此能够同步，所以将 TemperatureInput 组件中的 state 移动至 Calculator 组件中去。 
+
+改变:
+
+```js
+// TemperatureInput
+handleChange(e) {
+    // Before: this.setState({temperature: e.target.value});
+    this.props.onTemperatureChange(e.target.value);
+    // ...
+}
+render() {
+    // Before: const temperature = this.state.temperature;
+    const temperature = this.props.temperature;
+    // ...
+}
+```
+
+```js
+class Calculator extends React.Component {
+  constructor(props) {
+    super(props);
+    this.handleCelsiusChange = this.handleCelsiusChange.bind(this);
+    this.handleFahrenheitChange = this.handleFahrenheitChange.bind(this);
+    this.state = {temperature: '', scale: 'c'};
+  }
+
+  handleCelsiusChange(temperature) {
+    this.setState({scale: 'c', temperature});
+  }
+
+  handleFahrenheitChange(temperature) {
+    this.setState({scale: 'f', temperature});
+  }
+
+  render() {
+    const scale = this.state.scale;
+    const temperature = this.state.temperature;
+    const celsius = scale === 'f' ? tryConvert(temperature, toCelsius) : temperature;
+    const fahrenheit = scale === 'c' ? tryConvert(temperature, toFahrenheit) : temperature;
+
+    return (
+      <div>
+        <TemperatureInput
+          scale="c"
+          temperature={celsius}
+          onTemperatureChange={this.handleCelsiusChange} />
+        <TemperatureInput
+          scale="f"
+          temperature={fahrenheit}
+          onTemperatureChange={this.handleFahrenheitChange} />
+        <BoilingVerdict
+          celsius={parseFloat(celsius)} />
+      </div>
+    );
+  }
+}
+```
+无论你编辑哪个输入框中的内容，Calculator 组件中的 this.state.temperature 和 this.state.scale 均会被更新。其中一个输入框保留用户的输入并取值，另一个输入框始终基于这个值显示转换后的结果。
+
+# 组合 VS 继承
+
+## {props.children}
+<FancyBorder> JSX 标签中的所有内容都会作为一个 children prop 传递给 FancyBorder 组件
+```js
+function FancyBorder(props) {
+  return (
+    <div className={'FancyBorder FancyBorder-' + props.color}>
+      {props.children}
+    </div>
+  );
+}
+
+function WelcomeDialog() {
+  return (
+    <FancyBorder color="blue">
+      <h1 className="Dialog-title">
+        Welcome
+      </h1>
+      <p className="Dialog-message">
+        Thank you for visiting our spacecraft!
+      </p>
+    </FancyBorder>
+  );
+}
+```
+
+不用 children，自定义 prop
+
+```js
+function SplitPane(props) {
+  return (
+    <div className="SplitPane">
+      <div className="SplitPane-left">
+        {props.left}
+      </div>
+      <div className="SplitPane-right">
+        {props.right}
+      </div>
+    </div>
+  );
+}
+
+function App() {
+  return (
+    <SplitPane
+      left={
+        <Contacts />
+      }
+      right={
+        <Chat />
+      } />
+  );
+}
+```
+`<Contacts />` 和 `<Chat />` 之类的 React 元素本质就是对象（object），所以你可以把它们当作 props，像其他数据一样传递。像 **slot**。可以将任何东西作为 props 进行传递。
+
+# React哲学
+## 1 将设计好的 UI 划分为**组件层级**
+  - FilterableProductTable
+    - SearchBar
+    - ProductTable
+        - ProductCategoryRow
+        - ProductRow
+
+## 2 用 React 创建一个静态版本
+- 在构建应用的**静态**版本时，我们需要创建一些会重用其他组件的组件，然后通过 props 传入所需的数据。props 是父组件向子组件传递数据的方式。
+- 由于我们构建的是静态版本，所以这些组件目前只需提供 render() 方法用于渲染。
+- 最顶层的组件 FilterableProductTable 通过 props 接受你的数据模型。如果你的**数据模型发生了改变**，再次**调用 ReactDOM.render()**，**UI 就会相应地被更新**。
+
+## 3 确定 UI state 的最小（且完整）表示
+- 想要使你的 UI 具备**交互**功能，需要有触发基础数据模型改变的能力。React 通过实现 state 来完成这个任务。
+- 你要编写一个任务清单应用，你只需要保存一个包含所有事项的数组，而无需额外保存一个单独的 state 变量（用于存储任务个数）。当你需要展示任务个数时，只需要利用该数组的 length 属性即可
+
+
+### 示例应用
+
+示例应用拥有如下数据：
+
+- 包含所有产品的原始列表
+- 用户输入的搜索词
+- 复选框是否选中的值
+- 经过搜索筛选的产品列表
+
+检查相应的数据是否属于  state 的判断方法:
+- 是否是父组件通过 props 传递的数据
+- 是否是随着时间的推移保持不变的数据
+- 是否可以根据其他 state 或 prop 计算出来的数据
+- 如果是，则说明不属于state。
+
+所以包含所有产品的原始列表是经由 props 传入的，所以它不是 state；搜索词和复选框的值应该是 state，因为它们随时间会发生改变且无法由其他数据计算而来；经过搜索筛选的产品列表不是 state，因为它的结果可以由产品的原始列表根据搜索词和复选框的选择计算出来。
+
+**属于 state 的有：**
+- 用户输入的搜索词
+- 复选框是否选中的值
+
+## 4 确定 state 放置的位置
+我们已经确定了应用所需的 state 的最小集合。接下来，我们需要确定**哪个组件能够改变这些 state**，或者说**拥有这些 state**。
+
+📢 
+React 中的数据流是单向的，并顺着组件层级从上往下传递。
+
+对于应用中的每一个 state：
+
+- 找到根据这个 state 进行渲染的所有组件。**SearchBar和ProductTable**
+- 找到他们的共同所有者（common owner）组件（在组件层级上高于所有需要该 state 的组件）。**FilterableProductTable**
+- 该共同所有者组件或者比它层级更高的组件应该拥有该 state。
+- 如果你找不到一个合适的位置来存放该 state，就可以直接创建一个新的组件来存放该 state，并将这一新组件置于高于共同所有者组件层级的位置。
+
+我们把这些 state 存放在 FilterableProductTable 组件中。首先，将实例属性 this.state = {filterText: '', inStockOnly: false} 添加到 FilterableProductTable 的 constructor 中，设置应用的初始 state；接着，将 filterText 和 inStockOnly 作为 props 传入 ProductTable 和 SearchBar；最后，用这些 props 筛选 ProductTable 中的产品信息，并设置 SearchBar 的表单值。
+
+## 5 添加反向数据流
+们已经借助自上而下传递的 props 和 state 渲染了一个应用。现在，我们将尝试让数据反向传递：处于较低层级的表单组件更新较高层级的 FilterableProductTable 中的 state。每当用户改变表单的值，我们需要改变 state 来反映用户的当前输入。由于 state 只能由拥有它们的组件进行更改，**FilterableProductTable 必须将一个能够触发 state 改变的回调函数（callback）传递给 SearchBar**。我们可以使用输入框的 onChange 事件来监视用户输入的变化，并通知 FilterableProductTable 传递给 SearchBar 的回调函数。然后该回调函数将调用 setState()，从而更新应用。
+```js
+// FilterableProductTable
+  handleFilterTextChange(filterText) {
+    this.setState({
+      filterText: filterText
+    });
+  }
+  
+  handleInStockChange(inStockOnly) {
+    this.setState({
+      inStockOnly: inStockOnly
+    })
+  }
+  render() {
+  return (
+      <SearchBar
+        filterText={this.state.filterText}
+        inStockOnly={this.state.inStockOnly}
+        onFilterTextChange={this.handleFilterTextChange}
+        onInStockChange={this.handleInStockChange}
+      />
+  )
+  }
+
+
+// SearchBar
+handleFilterTextChange(e) {
+    this.props.onFilterTextChange(e.target.value);
+}
+<input
+    type="text"
+    placeholder="Search..."
+    value={this.props.filterText}
+    onChange={this.handleFilterTextChange}
+/>
+```
